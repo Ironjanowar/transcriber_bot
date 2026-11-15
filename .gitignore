@@ -1,0 +1,31 @@
+/_build/
+/cover/
+/deps/
+/doc/
+/.fetch
+erl_crash.dump
+*.ez
+transcriptor_bot-*.tar
+/tmp/
+
+# Rust build artifacts
+/transcriber/target/
+
+# Generated deployment artifacts (release launcher and transcriber binary)
+/runtime/
+
+# Private deployment files; never commit tokens or local state
+*.env
+.env
+.env.*
+deploy/local/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+/models/
+ggml-*.bin
+*.log
+/log/

@@ -1,0 +1,50 @@
+[Unit]
+Description=Telegram Bot API server (loopback, local mode)
+Documentation=file:/home/cuwano/apps/transcriptor_bot/deploy/README.md
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+ConditionPathExists=/home/cuwano/.local/bin/telegram-bot-api
+
+[Service]
+Type=simple
+WorkingDirectory=/home/cuwano/.local/share/transcriptor_bot/telegram-bot-api
+Environment=LANG=C.UTF-8
+Environment=LC_ALL=C.UTF-8
+EnvironmentFile=/home/cuwano/.config/transcriptor_bot/bot-api.env
+# TELEGRAM_API_ID/TELEGRAM_API_HASH are read from the private environment file,
+# never argv. --http-ip-address keeps the server on loopback. --local enables files larger
+# than 20 MB and local file paths. Long polling is used; no inbound port is
+# exposed and no webhook is registered.
+ExecStart=/home/cuwano/.local/bin/telegram-bot-api --local --http-ip-address=127.0.0.1 --http-port=8081 --http-stat-port=0 --dir=/home/cuwano/.local/share/transcriptor_bot/telegram-bot-api --temp-dir=/home/cuwano/.local/share/transcriptor_bot/telegram-bot-api/tmp
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=60
+TimeoutStopSec=30
+UMask=0077
+RuntimeDirectory=transcriptor-bot-api
+RuntimeDirectoryMode=0700
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/cuwano/.local/share/transcriptor_bot/telegram-bot-api
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+LimitNOFILE=65536
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=default.target
