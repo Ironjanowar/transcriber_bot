@@ -1,4 +1,4 @@
-# Despliegue de transcriptor_bot
+# Despliegue de transcriber_bot
 
 Esta guía describe la instalación de producción en la cuenta `cuwano`, con
 `systemd --user`, un servidor local de Telegram Bot API en loopback y long
@@ -12,7 +12,7 @@ Telegram  <-- long polling -->  telegram-bot-api.service (127.0.0.1:8081)
                                         ^
                                         | HTTP local
                                         |
-                              transcriptor-bot.service (Elixir/ExGram)
+                              transcriber-bot.service (Elixir/ExGram)
                                         |
                                         | proceso nuevo por audio
                                         v
@@ -26,25 +26,25 @@ Dos unidades independientes:
 
 - `telegram-bot-api.service`: servidor oficial `telegram-bot-api` en modo
   `--local`, escuchando solo en `127.0.0.1:8081`.
-- `transcriptor-bot.service`: release Elixir; requiere el Bot API y se reinicia
+- `transcriber-bot.service`: release Elixir; requiere el Bot API y se reinicia
   si falla. Usa long polling; no se registra webhook.
 
 ## Rutas
 
 | Ruta | Contenido | Modo |
 | --- | --- | --- |
-| `/home/cuwano/apps/transcriptor_bot` | checkout, `_build`, `runtime` | `0755` |
+| `/home/cuwano/apps/transcriber_bot` | checkout, `_build`, `runtime` | `0755` |
 | `.../runtime/bin/transcriber` | CLI Rust instalado por `deploy.sh` | `0755` |
 | `.../runtime/bin/transcribe-audio` | wrapper que fija modelo y entrada PCM | `0755` |
-| `.../runtime/bin/start-transcriptor-bot` | lanzador generado hacia la release | `0755` |
-| `/home/cuwano/.local/share/transcriptor_bot` | estado | `0700` |
-| `.../transcriptor_bot.db` | SQLite (WAL) | `0600` |
+| `.../runtime/bin/start-transcriber-bot` | lanzador generado hacia la release | `0755` |
+| `/home/cuwano/.local/share/transcriber_bot` | estado | `0700` |
+| `.../transcriber_bot.db` | SQLite (WAL) | `0600` |
 | `.../models/ggml-large-v3.bin` | modelo F16 | `0600` |
 | `.../models/ggml-silero-v6.2.0.bin` | modelo VAD | `0600` |
 | `.../work` | PCM/audio temporal | `0700` |
 | `.../telegram-bot-api` | datos del Bot API local | `0700` |
-| `/home/cuwano/.config/transcriptor_bot/app.env` | token y configuración de la app | `0600` |
-| `/home/cuwano/.config/transcriptor_bot/bot-api.env` | API ID/hash del Bot API | `0600` |
+| `/home/cuwano/.config/transcriber_bot/app.env` | token y configuración de la app | `0600` |
+| `/home/cuwano/.config/transcriber_bot/bot-api.env` | API ID/hash del Bot API | `0600` |
 | `/home/cuwano/.config/systemd/user/*.service` | unidades | `0644` |
 
 El lanzador estable evita que la unidad dependa del nombre exacto que Mix
@@ -69,9 +69,9 @@ Arch y openSUSE. No instala drivers ni CUDA Toolkit.
 ```bash
 sudo -iu cuwano
 mkdir -p ~/apps
-git clone --branch <rama> https://github.com/Ironjanowar/transcriptor_bot.git \
-  ~/apps/transcriptor_bot
-cd ~/apps/transcriptor_bot
+git clone --branch <rama> https://github.com/Ironjanowar/transcriber_bot.git \
+  ~/apps/transcriber_bot
+cd ~/apps/transcriber_bot
 ./deploy/bootstrap.sh
 ```
 
@@ -144,7 +144,7 @@ El bootstrap lo comprueba y ofrece habilitarlo con `sudo`.
 ## Despliegue
 
 ```bash
-cd ~/apps/transcriptor_bot
+cd ~/apps/transcriber_bot
 git fetch --all
 git switch <rama>
 git log -1 --oneline
@@ -153,7 +153,7 @@ git log -1 --oneline
 
 `deploy.sh` no ejecuta `git pull` y no usa `sudo`. Despliega exactamente el
 checkout desde el que se invoca. Si se invoca desde otro directorio, sincroniza
-el árbol a `/home/cuwano/apps/transcriptor_bot` con `rsync`, excluyendo `.git`,
+el árbol a `/home/cuwano/apps/transcriber_bot` con `rsync`, excluyendo `.git`,
 `_build`, `deps`, `transcriber/target` y `runtime` (los artefactos generados se
 conservan y se sustituyen de forma controlada).
 
@@ -195,9 +195,9 @@ aplicación, contiene:
 ```dotenv
 BOT_TOKEN=...
 OWNER_TELEGRAM_USER_ID=14977303
-DATABASE_PATH=/home/cuwano/.local/share/transcriptor_bot/transcriptor_bot.db
-TRANSCRIBER_COMMAND=/home/cuwano/apps/transcriptor_bot/runtime/bin/transcribe-audio
-WORK_DIR=/home/cuwano/.local/share/transcriptor_bot/work
+DATABASE_PATH=/home/cuwano/.local/share/transcriber_bot/transcriber_bot.db
+TRANSCRIBER_COMMAND=/home/cuwano/apps/transcriber_bot/runtime/bin/transcribe-audio
+WORK_DIR=/home/cuwano/.local/share/transcriber_bot/work
 TELEGRAM_API_BASE_URL=http://127.0.0.1:8081
 ```
 
@@ -243,18 +243,18 @@ Prueba de extremo a extremo manual:
 1. Añade el bot a un grupo.
 2. Como owner `14977303`, ejecuta `/allow` y `/enable`.
 3. Envía una nota de voz.
-4. `journalctl --user -u transcriptor-bot.service -f`.
+4. `journalctl --user -u transcriber-bot.service -f`.
 5. Verifica la transcripción y que `work/` queda vacío.
 
 ## Operación
 
 ```bash
-systemctl --user status telegram-bot-api.service transcriptor-bot.service
+systemctl --user status telegram-bot-api.service transcriber-bot.service
 systemctl --user restart telegram-bot-api.service
-systemctl --user restart transcriptor-bot.service
-journalctl --user -u transcriptor-bot.service -f
+systemctl --user restart transcriber-bot.service
+journalctl --user -u transcriber-bot.service -f
 journalctl --user -u telegram-bot-api.service -n 100 --no-pager
-cat ~/.local/share/transcriptor_bot/deployed-revision
+cat ~/.local/share/transcriber_bot/deployed-revision
 ```
 
 ### Backup de SQLite
@@ -262,11 +262,11 @@ cat ~/.local/share/transcriptor_bot/deployed-revision
 Detén la aplicación para que WAL y SHM no queden fuera del backup:
 
 ```bash
-systemctl --user stop transcriptor-bot.service
+systemctl --user stop transcriber-bot.service
 mkdir -p ~/backups
-sqlite3 ~/.local/share/transcriptor_bot/transcriptor_bot.db \
-  ".backup '$HOME/backups/transcriptor_bot-$(date +%F-%H%M).db'"
-systemctl --user start transcriptor-bot.service
+sqlite3 ~/.local/share/transcriber_bot/transcriber_bot.db \
+  ".backup '$HOME/backups/transcriber_bot-$(date +%F-%H%M).db'"
+systemctl --user start transcriber-bot.service
 ```
 
 No uses `cp` con el servicio activo.
@@ -275,7 +275,7 @@ No uses `cp` con el servicio activo.
 
 ```bash
 ./deploy/bootstrap.sh --skip-bot-api   # verifica y descarga si falta
-ls -lh ~/.local/share/transcriptor_bot/models/ggml-large-v3.bin
+ls -lh ~/.local/share/transcriber_bot/models/ggml-large-v3.bin
 ```
 
 ### Bot API
@@ -290,7 +290,7 @@ ls -lh ~/.local/share/transcriptor_bot/models/ggml-large-v3.bin
 Actualizar es cambiar el checkout y desplegar:
 
 ```bash
-cd ~/apps/transcriptor_bot
+cd ~/apps/transcriber_bot
 git fetch --all
 git switch <rama>
 git log -1 --oneline
@@ -313,16 +313,16 @@ Ambas unidades usan:
   `ProtectHome=read-only`, `ProtectKernelTunables=yes`,
   `ProtectKernelModules=yes`, `ProtectControlGroups=yes`,
   `RestrictSUIDSGID=yes`, `LockPersonality=yes`, `UMask=0077`.
-- `ReadWritePaths=` limitado a `~/.local/share/transcriptor_bot` (o a su
+- `ReadWritePaths=` limitado a `~/.local/share/transcriber_bot` (o a su
   subdirectorio del Bot API).
 - `Restart=on-failure`, `RestartSec` acotado, `StartLimitBurst=5` y
   `TimeoutStopSec`.
 
 La unidad de la aplicación **no** usa `PrivateDevices`: CUDA necesita
-`/dev/nvidia*`. La del Bot API sí lo usa. `RELEASE_TMP=%t/transcriptor-bot` da a
+`/dev/nvidia*`. La del Bot API sí lo usa. `RELEASE_TMP=%t/transcriber-bot` da a
 la release un directorio de runtime escribible aunque `ProtectHome=read-only`
 haga el resto de `$HOME` de solo lectura. La caché de CUDA y la de Erlang se
-redirigen a `~/.local/share/transcriptor_bot`.
+redirigen a `~/.local/share/transcriber_bot`.
 
 No añadas `ProtectHome=strict` sin revisar `EnvironmentFile`, el binario y la
 release: rompería el arranque.
@@ -330,12 +330,12 @@ release: rompería el arranque.
 ## Diagnóstico
 
 ```bash
-systemctl --user is-active telegram-bot-api.service transcriptor-bot.service
-systemctl --user show -p NRestarts --value transcriptor-bot.service
-journalctl --user -u transcriptor-bot.service -p warning -n 50 --no-pager
+systemctl --user is-active telegram-bot-api.service transcriber-bot.service
+systemctl --user show -p NRestarts --value transcriber-bot.service
+journalctl --user -u transcriber-bot.service -p warning -n 50 --no-pager
 ss -ltnp | grep 8081
-stat -c '%a %U %n' ~/.config/transcriptor_bot/app.env ~/.config/transcriptor_bot/bot-api.env \
-  ~/.local/share/transcriptor_bot ~/.local/share/transcriptor_bot/models/ggml-large-v3.bin
+stat -c '%a %U %n' ~/.config/transcriber_bot/app.env ~/.config/transcriber_bot/bot-api.env \
+  ~/.local/share/transcriber_bot ~/.local/share/transcriber_bot/models/ggml-large-v3.bin
 ```
 
 Comprobaciones concretas:
@@ -357,7 +357,7 @@ Comprobaciones concretas:
 ## Seguridad
 
 - No commitees los archivos `*.env`, tokens, bases SQLite, modelos ni logs.
-- Mantén `~/.config/transcriptor_bot` en `0700` y ambos entornos en `0600`.
+- Mantén `~/.config/transcriber_bot` en `0700` y ambos entornos en `0600`.
 - El Bot API solo escucha en loopback. No publiques el puerto 8081.
 - El owner es fijo; para cambiarlo hace falta editar el código y el contrato de
   despliegue, no solo el archivo de entorno.

@@ -72,11 +72,11 @@ api_id="1234567"
 api_hash="0123456789abcdef0123456789abcdef"
 
 # Paths derive from the overridden home, never from the caller's real home.
-assert_eq "${TRANSCRIPTOR_BOT_HOME}/apps/transcriptor_bot" "$APP_DIR" "APP_DIR"
-assert_eq "${TRANSCRIPTOR_BOT_HOME}/.local/share/transcriptor_bot" "$STATE_DIR" "STATE_DIR"
-assert_eq "${TRANSCRIPTOR_BOT_HOME}/.config/transcriptor_bot/app.env" "$APP_ENV_FILE" "APP_ENV_FILE"
-assert_eq "${TRANSCRIPTOR_BOT_HOME}/.config/transcriptor_bot/bot-api.env" "$BOT_API_ENV_FILE" "BOT_API_ENV_FILE"
-assert_eq "${STATE_DIR}/transcriptor_bot.db" "$DB_PATH" "DB_PATH"
+assert_eq "${TRANSCRIPTOR_BOT_HOME}/apps/transcriber_bot" "$APP_DIR" "APP_DIR"
+assert_eq "${TRANSCRIPTOR_BOT_HOME}/.local/share/transcriber_bot" "$STATE_DIR" "STATE_DIR"
+assert_eq "${TRANSCRIPTOR_BOT_HOME}/.config/transcriber_bot/app.env" "$APP_ENV_FILE" "APP_ENV_FILE"
+assert_eq "${TRANSCRIPTOR_BOT_HOME}/.config/transcriber_bot/bot-api.env" "$BOT_API_ENV_FILE" "BOT_API_ENV_FILE"
+assert_eq "${STATE_DIR}/transcriber_bot.db" "$DB_PATH" "DB_PATH"
 assert_eq "${STATE_DIR}/models/ggml-large-v3.bin" "$MODEL_FILE" "MODEL_FILE"
 
 # Secret shape validation.

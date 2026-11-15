@@ -10,11 +10,11 @@ if config_env() == :prod do
       System.get_env("DATABASE_PATH") ||
         Path.join(
           System.user_home!(),
-          ".local/share/transcriptor_bot/transcriptor_bot.sqlite3"
+          ".local/share/transcriber_bot/transcriber_bot.sqlite3"
         ),
     work_dir:
       System.get_env("WORK_DIR") ||
-        Path.join(System.user_home!(), ".local/share/transcriptor_bot/work"),
+        Path.join(System.user_home!(), ".local/share/transcriber_bot/work"),
     transcriber_command: System.get_env("TRANSCRIBER_COMMAND", "transcriptor"),
     transcriber_args: OptionParser.split(System.get_env("TRANSCRIBER_ARGS") || "")
 

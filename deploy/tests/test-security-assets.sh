@@ -26,7 +26,7 @@ reject() {
 }
 
 bot_unit="${DEPLOY_DIR}/telegram-bot-api.service"
-app_unit="${DEPLOY_DIR}/transcriptor-bot.service"
+app_unit="${DEPLOY_DIR}/transcriber-bot.service"
 bootstrap="${DEPLOY_DIR}/bootstrap.sh"
 deploy="${DEPLOY_DIR}/deploy.sh"
 

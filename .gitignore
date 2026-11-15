@@ -5,7 +5,7 @@
 /.fetch
 erl_crash.dump
 *.ez
-transcriptor_bot-*.tar
+transcriber_bot-*.tar
 /tmp/
 
 # Rust build artifacts

@@ -35,17 +35,17 @@ Fedora, Arch y openSUSE. No instala el driver NVIDIA ni el CUDA Toolkit: si
 
 | Qué | Ruta |
 | --- | --- |
-| Checkout y release | `/home/cuwano/apps/transcriptor_bot` |
-| Release Mix | `/home/cuwano/apps/transcriptor_bot/_build/prod/rel/transcriptor_bot` |
-| Lanzador estable de la release | `/home/cuwano/apps/transcriptor_bot/runtime/bin/start-transcriptor-bot` |
-| CLI Rust instalado | `/home/cuwano/apps/transcriptor_bot/runtime/bin/transcriber` |
-| Wrapper de transcripción | `/home/cuwano/apps/transcriptor_bot/runtime/bin/transcribe-audio` |
-| Estado, SQLite, trabajo y modelo | `/home/cuwano/.local/share/transcriptor_bot` |
-| SQLite | `/home/cuwano/.local/share/transcriptor_bot/transcriptor_bot.db` |
-| Modelos | `/home/cuwano/.local/share/transcriptor_bot/models/ggml-large-v3.bin` y `ggml-silero-v6.2.0.bin` |
-| Datos del Bot API local | `/home/cuwano/.local/share/transcriptor_bot/telegram-bot-api` |
-| Entorno app | `/home/cuwano/.config/transcriptor_bot/app.env` (`0600`) |
-| Entorno Bot API | `/home/cuwano/.config/transcriptor_bot/bot-api.env` (`0600`) |
+| Checkout y release | `/home/cuwano/apps/transcriber_bot` |
+| Release Mix | `/home/cuwano/apps/transcriber_bot/_build/prod/rel/transcriptor_bot` |
+| Lanzador estable de la release | `/home/cuwano/apps/transcriber_bot/runtime/bin/start-transcriber-bot` |
+| CLI Rust instalado | `/home/cuwano/apps/transcriber_bot/runtime/bin/transcriber` |
+| Wrapper de transcripción | `/home/cuwano/apps/transcriber_bot/runtime/bin/transcribe-audio` |
+| Estado, SQLite, trabajo y modelo | `/home/cuwano/.local/share/transcriber_bot` |
+| SQLite | `/home/cuwano/.local/share/transcriber_bot/transcriber_bot.db` |
+| Modelos | `/home/cuwano/.local/share/transcriber_bot/models/ggml-large-v3.bin` y `ggml-silero-v6.2.0.bin` |
+| Datos del Bot API local | `/home/cuwano/.local/share/transcriber_bot/telegram-bot-api` |
+| Entorno app | `/home/cuwano/.config/transcriber_bot/app.env` (`0600`) |
+| Entorno Bot API | `/home/cuwano/.config/transcriber_bot/bot-api.env` (`0600`) |
 | Unidades | `/home/cuwano/.config/systemd/user/*.service` |
 
 `bootstrap.sh` crea los directorios con modo `0700`, los archivos privados con
@@ -58,9 +58,9 @@ Entra como `cuwano` y clona el repositorio exactamente en la ruta de la tabla:
 ```bash
 sudo -iu cuwano
 mkdir -p ~/apps
-git clone --branch <rama> https://github.com/Ironjanowar/transcriptor_bot.git \
-  ~/apps/transcriptor_bot
-cd ~/apps/transcriptor_bot
+git clone --branch <rama> https://github.com/Ironjanowar/transcriber_bot.git \
+  ~/apps/transcriber_bot
+cd ~/apps/transcriber_bot
 ```
 
 Ejecuta el bootstrap una sola vez. Pedirá el token y las credenciales de
@@ -110,7 +110,7 @@ Después compila e instala la aplicación:
 `git pull`, no usa `sudo` y no hace rollback automático de la versión anterior.
 
 ```bash
-cd ~/apps/transcriptor_bot
+cd ~/apps/transcriber_bot
 git fetch --all
 git switch <rama>
 # Revisa el commit que vas a desplegar; deploy.sh no actualiza el árbol.
@@ -119,7 +119,7 @@ git log -1 --oneline
 ```
 
 Si lo ejecutas desde otro checkout, sincroniza ese árbol a
-`/home/cuwano/apps/transcriptor_bot` con `rsync` (sin `.git`, `_build`, `deps`,
+`/home/cuwano/apps/transcriber_bot` con `rsync` (sin `.git`, `_build`, `deps`,
 `target` ni `runtime`) y compila allí. La release se sustituye en sitio; si el
 deploy falla, corrige el checkout y vuelve a ejecutarlo.
 
@@ -133,9 +133,9 @@ deploy falla, corrige el checkout y vuelve a ejecutarlo.
   usa Exqlite directamente y crea el esquema con `CREATE TABLE IF NOT EXISTS`
   al arrancar;
 - instala las unidades y reinicia primero `telegram-bot-api.service` y después
-  `transcriptor-bot.service`;
+  `transcriber-bot.service`;
 - guarda el commit desplegado en
-  `~/.local/share/transcriptor_bot/deployed-revision`.
+  `~/.local/share/transcriber_bot/deployed-revision`.
 
 Opciones útiles:
 
@@ -149,14 +149,14 @@ Opciones útiles:
 ## Contrato de entorno
 
 `deploy.sh` regenera dos archivos aislados. La aplicación solo recibe
-`~/.config/transcriptor_bot/app.env`:
+`~/.config/transcriber_bot/app.env`:
 
 ```dotenv
 BOT_TOKEN=<token de BotFather>
 OWNER_TELEGRAM_USER_ID=14977303
-DATABASE_PATH=/home/cuwano/.local/share/transcriptor_bot/transcriptor_bot.db
-TRANSCRIBER_COMMAND=/home/cuwano/apps/transcriptor_bot/runtime/bin/transcribe-audio
-WORK_DIR=/home/cuwano/.local/share/transcriptor_bot/work
+DATABASE_PATH=/home/cuwano/.local/share/transcriber_bot/transcriber_bot.db
+TRANSCRIBER_COMMAND=/home/cuwano/apps/transcriber_bot/runtime/bin/transcribe-audio
+WORK_DIR=/home/cuwano/.local/share/transcriber_bot/work
 TELEGRAM_API_BASE_URL=http://127.0.0.1:8081
 ```
 
@@ -176,17 +176,17 @@ despliegue: `deploy.sh` rechaza cualquier otro valor.
 ## Servicios
 
 ```bash
-systemctl --user status telegram-bot-api.service transcriptor-bot.service
+systemctl --user status telegram-bot-api.service transcriber-bot.service
 systemctl --user restart telegram-bot-api.service
-systemctl --user restart transcriptor-bot.service
-journalctl --user -u transcriptor-bot.service -f
+systemctl --user restart transcriber-bot.service
+journalctl --user -u transcriber-bot.service -f
 journalctl --user -u telegram-bot-api.service -n 100 --no-pager
 ```
 
 El Bot API escucha solo en `127.0.0.1:8081`; la aplicación usa long polling y no
 registra webhook. La unidad de la aplicación requiere la del Bot API, pero cada
 una se supervisa por separado. Ambas tienen `Restart=on-failure` y escritura
-limitada a `~/.local/share/transcriptor_bot`.
+limitada a `~/.local/share/transcriber_bot`.
 
 Para que los servicios sobrevivan al logout y arranquen al reiniciar:
 
@@ -212,28 +212,28 @@ Prueba final real:
 
 1. Añade el bot a un grupo; el owner `14977303` ejecuta `/allow` y `/enable`.
 2. Envía una nota de voz o un audio.
-3. Observa `journalctl --user -u transcriptor-bot.service -f`.
+3. Observa `journalctl --user -u transcriber-bot.service -f`.
 4. Comprueba que llega la transcripción y que no quedan audios temporales en
-   `~/.local/share/transcriptor_bot/work`.
+   `~/.local/share/transcriber_bot/work`.
 
 ## Operación
 
 ```bash
 # Estado del commit desplegado
-cat ~/.local/share/transcriptor_bot/deployed-revision
+cat ~/.local/share/transcriber_bot/deployed-revision
 
 # Backup consistente de SQLite (para el servicio antes)
-systemctl --user stop transcriptor-bot.service
-sqlite3 ~/.local/share/transcriptor_bot/transcriptor_bot.db \
-  ".backup '$HOME/transcriptor_bot-$(date +%F).db'"
-systemctl --user start transcriptor-bot.service
+systemctl --user stop transcriber-bot.service
+sqlite3 ~/.local/share/transcriber_bot/transcriber_bot.db \
+  ".backup '$HOME/transcriber_bot-$(date +%F).db'"
+systemctl --user start transcriber-bot.service
 
 # Revalidar el modelo o reconstruir el Bot API
 ./deploy/bootstrap.sh --skip-bot-api
 ./deploy/bootstrap.sh --force-bot-api --skip-model
 ```
 
-No copies `transcriptor_bot.db` con `cp` mientras el servicio está activo: WAL y
+No copies `transcriber_bot.db` con `cp` mientras el servicio está activo: WAL y
 SHM pueden dejar el backup inconsistente. Usa `.backup` o detén el servicio.
 
 ## Actualizar y revertir
@@ -243,7 +243,7 @@ Para revertir, cambia manualmente al commit anterior y vuelve a desplegar; no
 hay rollback automático ni se conservan releases antiguas:
 
 ```bash
-cd ~/apps/transcriptor_bot
+cd ~/apps/transcriber_bot
 git switch --detach <commit-anterior>
 ./deploy/deploy.sh
 ```
@@ -260,15 +260,15 @@ git switch --detach <commit-anterior>
   otra instancia y reinicia el servicio.
 - **Webhook registrado**: `./deploy/smoke-test.sh --delete-webhook`.
 - **Error de escritura bajo `ProtectHome`**: revisa que
-  `~/.local/share/transcriptor_bot` existe con modo `0700`; `deploy.sh` lo crea.
+  `~/.local/share/transcriber_bot` existe con modo `0700`; `deploy.sh` lo crea.
 - **La release no arranca**: revisa `RELEASE_TMP`, el journal y que
-  `runtime/bin/start-transcriptor-bot` apunte a una release existente.
+  `runtime/bin/start-transcriber-bot` apunte a una release existente.
 - **Linger deshabilitado**: `sudo loginctl enable-linger cuwano`; sin esto los
   servicios no arrancan al reiniciar sin login.
 
 ## Seguridad
 
-- No commitees `~/.config/transcriptor_bot/*.env`, tokens, modelos ni bases de
+- No commitees `~/.config/transcriber_bot/*.env`, tokens, modelos ni bases de
   datos; `.gitignore` cubre esos artefactos.
 - El archivo de entorno debe ser `0600` y su directorio `0700`. Los scripts
   corrigen el modo y fallan si el propietario no es el usuario actual.

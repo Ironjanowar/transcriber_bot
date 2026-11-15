@@ -42,7 +42,7 @@ usage() {
   cat <<'EOF'
 Uso: ./deploy/deploy.sh [opciones]
 
-Compila el checkout actual y lo instala en ~/apps/transcriptor_bot, inicializa
+Compila el checkout actual y lo instala en ~/apps/transcriber_bot, inicializa
 el esquema SQLite, instala las unidades systemd --user y reinicia los
 servicios. No hace git pull y no usa sudo.
 
@@ -55,7 +55,7 @@ Opciones:
 
 Variables de entorno:
   TRANSCRIPTOR_BOT_APP_DIR   Directorio de instalación (por defecto
-                             /home/cuwano/apps/transcriptor_bot).
+                             /home/cuwano/apps/transcriber_bot).
   RUST_FEATURES              Features extra de Cargo (por defecto se añade
                              "cuda" si el paquete la declara).
 EOF
@@ -152,7 +152,7 @@ write_launcher() {
   local tmp
   [[ -x "$RELEASE_BIN" ]] || die "No existe la release ${RELEASE_BIN}; no se puede escribir el lanzador."
   install -d -m 0755 "${RUNTIME_DIR}/bin"
-  tmp="$(mktemp "${RUNTIME_DIR}/.start-transcriptor-bot.XXXXXX")"
+  tmp="$(mktemp "${RUNTIME_DIR}/.start-transcriber-bot.XXXXXX")"
   {
     printf '#!/bin/sh\n'
     printf 'set -eu\n'
@@ -225,7 +225,7 @@ install_units() {
   local unit_dir="${APP_HOME}/.config/systemd/user"
   install -d -m 0755 "$unit_dir"
   install -m 0644 "${SCRIPT_DIR}/telegram-bot-api.service" "${unit_dir}/telegram-bot-api.service"
-  install -m 0644 "${SCRIPT_DIR}/transcriptor-bot.service" "${unit_dir}/transcriptor-bot.service"
+  install -m 0644 "${SCRIPT_DIR}/transcriber-bot.service" "${unit_dir}/transcriber-bot.service"
   systemctl --user daemon-reload
   systemctl --user enable "$BOT_API_SERVICE" "$APP_SERVICE"
   log "Unidades instaladas y habilitadas en ${unit_dir}"

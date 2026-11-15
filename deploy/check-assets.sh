@@ -68,21 +68,21 @@ check_shellcheck() {
 fake_unit_tree() {
   local root="$1"
   install -d -m 0755 \
-    "${root}/home/apps/transcriptor_bot/runtime/bin" \
+    "${root}/home/apps/transcriber_bot/runtime/bin" \
     "${root}/home/.local/bin" \
-    "${root}/home/.config/transcriptor_bot" \
-    "${root}/home/.local/share/transcriptor_bot/telegram-bot-api/tmp"
-  printf '#!/bin/sh\nexit 0\n' > "${root}/home/apps/transcriptor_bot/runtime/bin/start-transcriptor-bot"
+    "${root}/home/.config/transcriber_bot" \
+    "${root}/home/.local/share/transcriber_bot/telegram-bot-api/tmp"
+  printf '#!/bin/sh\nexit 0\n' > "${root}/home/apps/transcriber_bot/runtime/bin/start-transcriber-bot"
   printf '#!/bin/sh\nexit 0\n' > "${root}/home/.local/bin/telegram-bot-api"
   chmod 0755 \
-    "${root}/home/apps/transcriptor_bot/runtime/bin/start-transcriptor-bot" \
+    "${root}/home/apps/transcriber_bot/runtime/bin/start-transcriber-bot" \
     "${root}/home/.local/bin/telegram-bot-api"
   printf 'BOT_TOKEN=123456:placeholder\n' \
-    > "${root}/home/.config/transcriptor_bot/app.env"
+    > "${root}/home/.config/transcriber_bot/app.env"
   printf 'TELEGRAM_API_ID=1\nTELEGRAM_API_HASH=00000000000000000000000000000000\n' \
-    > "${root}/home/.config/transcriptor_bot/bot-api.env"
-  chmod 0600 "${root}/home/.config/transcriptor_bot/app.env" \
-    "${root}/home/.config/transcriptor_bot/bot-api.env"
+    > "${root}/home/.config/transcriber_bot/bot-api.env"
+  chmod 0600 "${root}/home/.config/transcriber_bot/app.env" \
+    "${root}/home/.config/transcriber_bot/bot-api.env"
 }
 
 check_units() {
@@ -94,21 +94,21 @@ check_units() {
 
   UNIT_TMP="$(mktemp -d)"
   fake_unit_tree "$UNIT_TMP"
-  for unit in transcriptor-bot.service telegram-bot-api.service; do
+  for unit in transcriber-bot.service telegram-bot-api.service; do
     sed "s#/home/cuwano#${UNIT_TMP}/home#g" "${SCRIPT_DIR}/${unit}" > "${UNIT_TMP}/${unit}"
   done
 
-  if systemd-analyze verify "${UNIT_TMP}/transcriptor-bot.service" "${UNIT_TMP}/telegram-bot-api.service"; then
+  if systemd-analyze verify "${UNIT_TMP}/transcriber-bot.service" "${UNIT_TMP}/telegram-bot-api.service"; then
     ok "systemd-analyze verify: unidades"
   else
     fail "systemd-analyze verify: unidades"
   fi
 
-  for unit in transcriptor-bot.service telegram-bot-api.service; do
+  for unit in transcriber-bot.service telegram-bot-api.service; do
     if grep -q '^NoNewPrivileges=yes$' "${SCRIPT_DIR}/${unit}" \
       && grep -q '^ProtectSystem=strict$' "${SCRIPT_DIR}/${unit}" \
       && grep -q '^ProtectHome=read-only$' "${SCRIPT_DIR}/${unit}" \
-      && grep -q '^ReadWritePaths=/home/cuwano/.local/share/transcriptor_bot' "${SCRIPT_DIR}/${unit}" \
+      && grep -q '^ReadWritePaths=/home/cuwano/.local/share/transcriber_bot' "${SCRIPT_DIR}/${unit}" \
       && grep -q '^Restart=on-failure$' "${SCRIPT_DIR}/${unit}" \
       && grep -q '^UMask=0077$' "${SCRIPT_DIR}/${unit}"; then
       ok "hardening: ${unit}"
