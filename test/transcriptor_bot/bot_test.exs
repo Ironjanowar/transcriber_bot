@@ -64,6 +64,22 @@ defmodule TranscriptorBot.BotTest do
     assert html =~ "Pendientes"
   end
 
+  test "declares start and help in Telegram's command menu" do
+    commands = Bot.commands()
+
+    start = Enum.find(commands, &(Keyword.get(&1, :command) == "start"))
+
+    assert is_binary(start[:opts][:description]) and start[:opts][:description] != ""
+
+    assert Enum.any?(commands, fn command ->
+             command[:command] == "help" and command[:opts][:description] != ""
+           end)
+
+    assert Enum.any?(commands, fn command ->
+             command[:command] == "status" and command[:opts][:description] != ""
+           end)
+  end
+
   test "enqueues private audio from an administrator", %{bot_name: bot, queue: queue} do
     voice = %Voice{file_id: "f", file_unique_id: "u", duration: 2, mime_type: "audio/ogg"}
 

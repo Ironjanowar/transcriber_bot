@@ -6,17 +6,19 @@ defmodule TranscriptorBot.Bot do
   product policy lives in `TranscriptorBot.Router`.
   """
 
-  use ExGram.Bot, name: :transcriptor_bot, setup_commands: false, get_me: false
+  use ExGram.Bot, name: :transcriptor_bot, setup_commands: true, get_me: false
 
   require Logger
 
-  command("allow")
-  command("deny")
-  command("enable")
-  command("disable")
-  command("status")
-  command("admin_add")
-  command("admin_remove")
+  command("start", description: "Iniciar el bot")
+  command("help", description: "Mostrar ayuda contextual")
+  command("status", description: "Ver estado del grupo y la cola")
+  command("allow", description: "Autorizar y activar este grupo")
+  command("deny", description: "Revocar la autorización del grupo")
+  command("enable", description: "Activar las transcripciones")
+  command("disable", description: "Pausar nuevas transcripciones")
+  command("admin_add", description: "Añadir administrador respondiendo a su mensaje")
+  command("admin_remove", description: "Eliminar administrador respondiendo a su mensaje")
 
   @impl true
   def handle({:command, command, message}, context) do

@@ -12,7 +12,7 @@ defmodule TranscriptorBot.Router do
   alias TranscriptorBot.{Formatting, Queue, Store, Telegram}
 
   @group_types ~w(group supergroup)
-  @commands ~w(allow deny enable disable status admin_add admin_remove)
+  @commands ~w(start help allow deny enable disable status admin_add admin_remove)
 
   @type deps :: %{
           store: GenServer.server(),
@@ -65,6 +65,11 @@ defmodule TranscriptorBot.Router do
     end
   end
 
+  defp handle_group_command(:start, message, deps), do: reply(deps, message, start_text())
+
+  defp handle_group_command(:help, message, deps),
+    do: reply(deps, message, help_text(message, deps))
+
   defp handle_group_command(command, message, deps)
        when command in [:allow, :deny, :enable, :disable, :status] do
     case command do
@@ -82,6 +87,11 @@ defmodule TranscriptorBot.Router do
 
   defp handle_group_command(:admin_add, message, deps), do: handle_admin_add(message, deps)
   defp handle_group_command(:admin_remove, message, deps), do: handle_admin_remove(message, deps)
+
+  defp handle_private_command(:start, message, deps), do: reply(deps, message, start_text())
+
+  defp handle_private_command(:help, message, deps),
+    do: reply(deps, message, help_text(message, deps))
 
   defp handle_private_command(:status, message, deps) do
     stats = Queue.status(deps.queue)
@@ -323,6 +333,33 @@ defmodule TranscriptorBot.Router do
     stats = Queue.status(deps.queue)
 
     "Grupo: #{state}\nPendientes: #{stats.pending}\nEn proceso: #{stats.running}"
+  end
+
+  defp start_text do
+    "Hola. Transcribo notas de voz y archivos de audio. Usa /help para ver cómo utilizarme."
+  end
+
+  defp help_text(message, deps) do
+    cond do
+      private?(message) and message.from.id == deps.owner_id ->
+        "Envíame audio por privado para transcribirlo.\n\n" <>
+          "Comandos: /status, /help.\n" <>
+          "Propietario: responde a un usuario con /admin_add o /admin_remove."
+
+      private?(message) and admin?(message.from.id, deps) ->
+        "Envíame audio por privado para transcribirlo.\n\nComandos: /status, /help."
+
+      private?(message) ->
+        "Este bot transcribe audio en grupos autorizados. Solo los administradores pueden enviar audio por privado."
+
+      group?(message) and admin?(message.from.id, deps) ->
+        "Envía una nota de voz o un archivo de audio para transcribirlo.\n\n" <>
+          "Comandos: /status, /allow, /deny, /enable, /disable y /help."
+
+      true ->
+        "Envía una nota de voz o un archivo de audio. El grupo debe estar autorizado y activo.\n\n" <>
+          "Comandos: /status y /help."
+    end
   end
 
   defp reply(deps, message, text) do

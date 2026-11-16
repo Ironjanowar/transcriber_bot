@@ -30,6 +30,14 @@ defmodule TranscriptorBot.Telegram.ExGram do
 
   @impl true
   def download_file(state, file_path, dest, max_bytes) do
+    if Path.type(file_path) == :absolute do
+      copy_local_file(file_path, dest, max_bytes)
+    else
+      download_http_file(state, file_path, dest, max_bytes)
+    end
+  end
+
+  defp download_http_file(state, file_path, dest, max_bytes) do
     url = file_url(state, file_path)
     {:ok, file} = File.open(dest, [:write, :binary])
     ref = make_ref()
@@ -81,6 +89,69 @@ defmodule TranscriptorBot.Telegram.ExGram do
       File.rm(dest)
       {:error, error}
   end
+
+  defp copy_local_file(source, dest, max_bytes) do
+    if Path.expand(source) == Path.expand(dest) do
+      {:error, :source_is_destination}
+    else
+      do_copy_local_file(source, dest, max_bytes)
+    end
+  end
+
+  defp do_copy_local_file(source, dest, max_bytes) do
+    with {:ok, %{type: :regular, size: size}} <- File.stat(source),
+         :ok <- within_limit(size, max_bytes) do
+      result = copy_open_file(source, dest, max_bytes)
+      if result != :ok, do: File.rm(dest)
+      result
+    else
+      {:error, reason} ->
+        File.rm(dest)
+        {:error, reason}
+
+      _ ->
+        File.rm(dest)
+        {:error, :not_regular_file}
+    end
+  end
+
+  defp copy_open_file(source, dest, max_bytes) do
+    with {:ok, source_io} <- File.open(source, [:read, :binary]) do
+      try do
+        with {:ok, dest_io} <- File.open(dest, [:write, :binary]) do
+          try do
+            copy_chunks(source_io, dest_io, 0, max_bytes)
+          after
+            File.close(dest_io)
+          end
+        end
+      after
+        File.close(source_io)
+      end
+    end
+  end
+
+  defp copy_chunks(source, dest, written, max_bytes) do
+    case IO.binread(source, 64 * 1024) do
+      :eof ->
+        :ok
+
+      {:error, reason} ->
+        {:error, reason}
+
+      data ->
+        next = written + byte_size(data)
+
+        with :ok <- within_limit(next, max_bytes),
+             :ok <- IO.binwrite(dest, data) do
+          copy_chunks(source, dest, next, max_bytes)
+        end
+    end
+  end
+
+  defp within_limit(_size, :infinity), do: :ok
+  defp within_limit(size, max_bytes) when size <= max_bytes, do: :ok
+  defp within_limit(_size, _max_bytes), do: {:error, :too_large}
 
   @impl true
   def send_html(state, chat_id, html, opts) do

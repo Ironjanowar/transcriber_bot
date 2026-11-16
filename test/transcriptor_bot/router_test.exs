@@ -64,6 +64,40 @@ defmodule TranscriptorBot.RouterTest do
     message(chat_id, chat_type, from_id, Keyword.put(attrs, :voice, voice))
   end
 
+  describe "start and contextual help" do
+    test "start gives a short welcome", %{deps: deps} do
+      handle(deps, message(@member, "private", @member, text: "/start"))
+
+      assert last_text(deps.telegram) =~ "Transcribo"
+      assert last_text(deps.telegram) =~ "/help"
+      refute last_text(deps.telegram) =~ "/admin_add"
+    end
+
+    test "private owner help includes private audio and owner commands", %{deps: deps} do
+      handle(deps, message(@owner, "private", @owner, text: "/help"))
+
+      assert last_text(deps.telegram) =~ "audio por privado"
+      assert last_text(deps.telegram) =~ "/status"
+      assert last_text(deps.telegram) =~ "/admin_add"
+      assert last_text(deps.telegram) =~ "/admin_remove"
+    end
+
+    test "group member help omits restricted commands", %{deps: deps} do
+      handle(deps, message(-100, "group", @member, text: "/help"))
+
+      assert last_text(deps.telegram) =~ "Envía"
+      assert last_text(deps.telegram) =~ "/status"
+      refute last_text(deps.telegram) =~ "/allow"
+    end
+
+    test "group admin help includes authorization commands", %{deps: deps} do
+      handle(deps, message(-100, "group", @admin, text: "/help"))
+
+      assert last_text(deps.telegram) =~ "/allow"
+      assert last_text(deps.telegram) =~ "/disable"
+    end
+  end
+
   describe "group authorization commands" do
     test "an admin allows a group, activating it", %{deps: deps, store: store} do
       handle(deps, message(-100, "group", @admin, text: "/allow"))

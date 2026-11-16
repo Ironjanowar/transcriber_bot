@@ -61,6 +61,44 @@ defmodule TranscriptorBot.TelegramTest do
   end
 
   describe "file download" do
+    test "copies an absolute file path returned by the local Bot API" do
+      source =
+        Path.join(System.tmp_dir!(), "telegram_source_#{System.unique_integer([:positive])}")
+
+      dest =
+        Path.join(System.tmp_dir!(), "telegram_download_#{System.unique_integer([:positive])}")
+
+      File.write!(source, "local-audio")
+
+      on_exit(fn ->
+        File.rm(source)
+        File.rm(dest)
+      end)
+
+      assert :ok = Telegram.download_file(client(), source, dest, 100)
+      assert File.read!(dest) == "local-audio"
+      assert File.read!(source) == "local-audio"
+    end
+
+    test "rejects an oversized absolute local file and removes the destination" do
+      source =
+        Path.join(System.tmp_dir!(), "telegram_source_#{System.unique_integer([:positive])}")
+
+      dest =
+        Path.join(System.tmp_dir!(), "telegram_download_#{System.unique_integer([:positive])}")
+
+      File.write!(source, String.duplicate("x", 101))
+
+      on_exit(fn ->
+        File.rm(source)
+        File.rm(dest)
+      end)
+
+      assert {:error, :too_large} = Telegram.download_file(client(), source, dest, 100)
+      refute File.exists?(dest)
+      assert File.exists?(source)
+    end
+
     test "uses the configured local Bot API base URL" do
       assert Telegram.file_url(client(), "voice/file_1.ogg") ==
                "http://127.0.0.1:8081/file/bottest_token/voice/file_1.ogg"
