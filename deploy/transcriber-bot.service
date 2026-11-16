@@ -1,0 +1,57 @@
+[Unit]
+Description=Transcriptor Bot (Elixir/ExGram, long polling)
+Documentation=file:/home/cuwano/apps/transcriber_bot/deploy/README.md
+Wants=network-online.target
+After=network-online.target telegram-bot-api.service
+Requires=telegram-bot-api.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+ConditionPathExists=/home/cuwano/apps/transcriber_bot/runtime/bin/start-transcriber-bot
+
+[Service]
+Type=simple
+WorkingDirectory=/home/cuwano/apps/transcriber_bot
+Environment=LANG=C.UTF-8
+Environment=LC_ALL=C.UTF-8
+Environment=PATH=/home/cuwano/.local/bin:/usr/local/bin:/usr/bin:/bin
+# A Mix release writes generated runtime files here. It must be writable even
+# though ProtectHome=read-only makes the rest of $HOME read-only.
+Environment=RELEASE_TMP=%t/transcriptor-bot
+Environment=TMPDIR=%t/transcriptor-bot
+Environment=ERL_CRASH_DUMP=%t/transcriptor-bot/erl_crash.dump
+Environment=XDG_CACHE_HOME=/home/cuwano/.local/share/transcriber_bot/cache
+Environment=CUDA_CACHE_PATH=/home/cuwano/.local/share/transcriber_bot/cuda-cache
+EnvironmentFile=/home/cuwano/.config/transcriber_bot/app.env
+ExecStart=/home/cuwano/apps/transcriber_bot/runtime/bin/start-transcriber-bot
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=120
+TimeoutStopSec=60
+KillSignal=SIGTERM
+UMask=0077
+RuntimeDirectory=transcriptor-bot
+RuntimeDirectoryMode=0700
+NoNewPrivileges=yes
+PrivateTmp=yes
+# Do not set PrivateDevices: CUDA needs /dev/nvidia*.
+ProtectSystem=strict
+ProtectHome=read-only
+ReadOnlyPaths=/home/cuwano/apps/transcriber_bot
+ReadWritePaths=/home/cuwano/.local/share/transcriber_bot
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+LimitNOFILE=65536
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=default.target
